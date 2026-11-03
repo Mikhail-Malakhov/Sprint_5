@@ -2,7 +2,7 @@ import pytest
 from selenium import webdriver
 
 from data import Urls
-from helpers import generate_email, generate_name, generate_password, login, register_user
+from helpers import login, register_new_user
 
 
 def pytest_addoption(parser):
@@ -26,16 +26,9 @@ def driver(request):
 
 
 @pytest.fixture
-def new_user():
-    """Данные нового (ещё не зарегистрированного) пользователя."""
-    return {"name": generate_name(), "email": generate_email(), "password": generate_password()}
-
-
-@pytest.fixture
-def registered_user(driver, new_user):
-    """Регистрирует пользователя через UI и возвращает его данные."""
-    register_user(driver, **new_user)
-    return new_user
+def registered_user(driver):
+    """Зарегистрированный пользователь (данные генерируются и регистрируются в helpers)."""
+    return register_new_user(driver)
 
 
 @pytest.fixture

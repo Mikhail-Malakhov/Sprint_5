@@ -30,6 +30,11 @@ def generate_name():
     return "Тест" + "".join(random.choice(string.ascii_lowercase) for _ in range(5))
 
 
+def generate_user_data():
+    """Возвращает данные нового пользователя: имя, логин (email) и пароль."""
+    return {"name": generate_name(), "email": generate_email(), "password": generate_password()}
+
+
 # ---------- Ожидания и действия ----------
 
 def wait_visible(driver, locator):
@@ -89,6 +94,13 @@ def register_user(driver, name, email, password):
     fill(driver, RegisterPageLocators.PASSWORD_INPUT, password)
     click(driver, RegisterPageLocators.REGISTER_BUTTON)
     WebDriverWait(driver, TIMEOUT).until(EC.url_to_be(Urls.LOGIN))
+
+
+def register_new_user(driver):
+    """Генерирует данные, регистрирует нового пользователя и возвращает его данные."""
+    user = generate_user_data()
+    register_user(driver, **user)
+    return user
 
 
 def login(driver, email, password):
