@@ -7,6 +7,10 @@ class HeaderLocators:
     LOGO = (By.XPATH, "//div[contains(@class, 'header__logo')]//a")                   # Логотип Stellar Burgers в шапке
 
 
+class CommonLocators:
+    MODAL_OVERLAY = (By.XPATH, "//div[contains(@class, 'Modal_modal_overlay')]")      # Затемняющий слой (оверлей) поверх страницы при загрузке
+
+
 class MainPageLocators:
     LOGIN_TO_ACCOUNT_BUTTON = (By.XPATH, "//button[text()='Войти в аккаунт']")        # Кнопка «Войти в аккаунт» на главной
     PLACE_ORDER_BUTTON = (By.XPATH, "//button[text()='Оформить заказ']")              # Кнопка «Оформить заказ» (видна только после входа)

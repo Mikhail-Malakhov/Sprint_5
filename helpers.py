@@ -6,8 +6,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from data import TIMEOUT, Urls, UserData
-from locators import LoginPageLocators, MainPageLocators, RegisterPageLocators
+from locators import CommonLocators, LoginPageLocators, MainPageLocators, RegisterPageLocators
 
+CURRENT_TAB_CLASS = "tab_tab_type_current"  # Класс, который получает выбранная вкладка конструктора
+
+
+# ---------- Генераторы данных ----------
 
 def generate_email():
     """Генерирует уникальный логин (email) вида имя_фамилия_когорта_3цифры@домен."""
@@ -26,11 +30,15 @@ def generate_name():
     return "Тест" + "".join(random.choice(string.ascii_lowercase) for _ in range(5))
 
 
+# ---------- Ожидания и действия ----------
+
 def wait_visible(driver, locator):
     return WebDriverWait(driver, TIMEOUT).until(EC.visibility_of_element_located(locator))
 
 
 def click(driver, locator):
+    """Ждёт, пока исчезнет оверлей загрузки и элемент станет кликабельным, затем кликает."""
+    WebDriverWait(driver, TIMEOUT).until(EC.invisibility_of_element_located(CommonLocators.MODAL_OVERLAY))
     WebDriverWait(driver, TIMEOUT).until(EC.element_to_be_clickable(locator)).click()
 
 
@@ -40,36 +48,38 @@ def fill(driver, locator, text):
     field.send_keys(text)
 
 
-class active_tab_is_stable:
-    """Условие ожидания: активная вкладка конструктора равна expected и держится stable_for секунд.
+class tab_has_current_class:
+    """Условие ожидания: у вкладки есть класс tab_tab_type_current, и он держится stable_for секунд.
 
-    После клика по вкладке список ингредиентов плавно прокручивается, и подсветка вкладок
-    по пути «пролетает» через соседние разделы. Поэтому ждём окончания прокрутки.
+    После клика по вкладке список ингредиентов плавно прокручивается, и подсветка
+    по пути переходит через соседние вкладки. Поэтому ждём, пока прокрутка закончится.
     """
 
-    def __init__(self, expected, stable_for=1.0):
-        self.expected = expected
+    def __init__(self, locator, stable_for=1.0):
+        self.locator = locator
         self.stable_for = stable_for
         self.since = None
 
     def __call__(self, driver):
-        text = driver.find_element(*MainPageLocators.ACTIVE_TAB).text
-        if text != self.expected:
+        tab = driver.find_element(*self.locator)
+        if CURRENT_TAB_CLASS not in tab.get_attribute("class"):
             self.since = None
             return False
         if self.since is None:
             self.since = time.monotonic()
-        return time.monotonic() - self.since >= self.stable_for
+        return tab if time.monotonic() - self.since >= self.stable_for else False
 
 
-def get_active_tab_after_scroll(driver, expected):
-    """Ждёт, пока активной стабильно станет вкладка expected, и возвращает текст активной вкладки."""
-    WebDriverWait(driver, TIMEOUT, poll_frequency=0.2).until(
-        active_tab_is_stable(expected),
-        message=f"Вкладка «{expected}» не стала активной",
+def open_constructor_tab(driver, locator):
+    """Кликает по вкладке конструктора и возвращает её элемент после того, как она стала выбранной."""
+    click(driver, locator)
+    return WebDriverWait(driver, TIMEOUT, poll_frequency=0.2).until(
+        tab_has_current_class(locator),
+        message="Вкладка конструктора не стала выбранной",
     )
-    return driver.find_element(*MainPageLocators.ACTIVE_TAB).text
 
+
+# ---------- Сценарии ----------
 
 def register_user(driver, name, email, password):
     """Регистрирует пользователя через форму и ждёт перехода на страницу входа."""
